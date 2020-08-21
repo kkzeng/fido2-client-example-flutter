@@ -1,3 +1,4 @@
+import 'package:fido2_client/fido2_client.dart';
 import 'package:flutter/material.dart';
 
 import 'auth_api.dart';
@@ -54,6 +55,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController _tc = TextEditingController();
   AuthApi _api = AuthApi();
+  RegisterOptions _options;
 
   Widget buildTextField() {
     return TextField(
@@ -108,11 +110,21 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             RaisedButton(
-              child: Text('Press to request register'),
+              child: Text('Press to request registration options'),
               onPressed: () async {
                 String username = _tc.text;
-                RegisterRequest r = await _api.registerRequest(username);
+                _options = await _api.registerRequest(username);
               }
+            ),
+            RaisedButton(
+                child: Text('Press to register credentials'),
+                onPressed: () async {
+                  String username = _tc.text;
+                  Fido2Client f = Fido2Client();
+                  f.initiateRegistrationProcess(_options.challenge, _options.userId, _options.username, _options.rpId, _options.rpName);
+                  // TODO add listener to get these results
+                  //_api.registerResponse(_options.username, _options.challenge, keyHandle, clientDataJSON, attestationObj)
+                }
             )
           ],
         ),

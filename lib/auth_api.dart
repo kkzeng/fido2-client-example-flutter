@@ -19,7 +19,7 @@ class AuthApi {
     return user.value;
   }
 
-  Future<RegisterRequest> registerRequest(String username) async {
+  Future<RegisterOptions> registerRequest(String username) async {
     var response = await _client.post('$TEST_URL/registerRequest',
         headers: {
           HttpHeaders.contentTypeHeader: 'application/json',
@@ -38,7 +38,28 @@ class AuthApi {
     return _parseRegisterReq(response.body);
   }
 
-  RegisterRequest _parseRegisterReq(String responseBody) {
+  Future<void> registerResponse(String username, String challenge, String keyHandle, String clientDataJSON, String attestationObj) async {
+    var response = await _client.post('$TEST_URL/registerResponse',
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.cookieHeader: 'username=$username; signed-in=yes',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: jsonEncode(
+          {
+           'id': keyHandle,
+            'type': 'public-key',
+            'rawId': keyHandle,
+            'response': {
+              'clientDataJSON': clientDataJSON,
+              'attestationObject': attestationObj,
+            }
+          },
+        )
+    );
+  }
+
+  RegisterOptions _parseRegisterReq(String responseBody) {
     var json = jsonDecode(responseBody);
     String rpId = json['rp']['id'];
     String rpName = json['rp']['name'];
@@ -46,7 +67,7 @@ class AuthApi {
     String userId = json['user']['id'];
     int algoId = json['pubKeyCredParams'][0]['alg'];
     String challenge = json['challenge'];
-    return RegisterRequest(
+    return RegisterOptions(
         rpId: rpId,
         rpName: rpName,
         userId: userId,
@@ -56,8 +77,8 @@ class AuthApi {
   }
 }
 
-class RegisterRequest {
-  RegisterRequest({this.rpId, this.rpName, this.userId, this.username, this.algoId, this.challenge});
+class RegisterOptions {
+  RegisterOptions({this.rpId, this.rpName, this.userId, this.username, this.algoId, this.challenge});
   String rpId;
   String rpName;
   String username;
