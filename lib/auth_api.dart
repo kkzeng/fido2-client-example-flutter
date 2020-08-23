@@ -6,21 +6,21 @@ class AuthApi {
   static const String BASE_URL = 'https://webauthn-server-demo.herokuapp.com/auth';
   static const String TEST_URL = 'http://192.168.1.25:8080/auth';
 
-
   var _client = http.Client();
 
   Future<String> username(String username) async {
-    var response = await _client.post('$TEST_URL/username',
+    var response = await _client.post('$BASE_URL/username',
         headers: { HttpHeaders.contentTypeHeader: 'application/json'},
         body: jsonEncode({'username': username}));
     String rawCookie = response.headers[HttpHeaders.setCookieHeader];
     if (rawCookie == null) return null;
     Cookie user = Cookie.fromSetCookieValue(rawCookie);
+    print(response.body);
     return user.value;
   }
 
   Future<RegisterOptions> registerRequest(String username) async {
-    var response = await _client.post('$TEST_URL/registerRequest',
+    var response = await _client.post('$BASE_URL/registerRequest',
         headers: {
           HttpHeaders.contentTypeHeader: 'application/json',
           HttpHeaders.cookieHeader: 'username=$username; signed-in=yes',
@@ -35,14 +35,15 @@ class AuthApi {
             },
           },
         ));
+    print(response.body);
     return _parseRegisterReq(response.body);
   }
 
-  Future<void> registerResponse(String username, String challenge, String keyHandle, String clientDataJSON, String attestationObj) async {
-    var response = await _client.post('$TEST_URL/registerResponse',
+  Future<User> registerResponse(String username, String challenge, String keyHandle, String clientDataJSON, String attestationObj) async {
+    var response = await _client.post('$BASE_URL/registerResponse',
         headers: {
           HttpHeaders.contentTypeHeader: 'application/json',
-          HttpHeaders.cookieHeader: 'username=$username; signed-in=yes',
+          HttpHeaders.cookieHeader: 'username=$username; challenge=$challenge; signed-in=yes',
           'X-Requested-With': 'XMLHttpRequest'
         },
         body: jsonEncode(
@@ -57,6 +58,24 @@ class AuthApi {
           },
         )
     );
+    print(response.body);
+    return _parseUser(response.body);
+  }
+
+  Future<SigningOptions> signingRequest(String username, String keyHandle) async {
+    String url = '$TEST_URL/signinRequest';
+    if(keyHandle != null) {
+      url += '?credId=$keyHandle';
+    }
+    var response = await _client.post(url,
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.cookieHeader: 'username=$username; signed-in=yes',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: jsonEncode({}));
+    print(response.body);
+    return _parseSigningReq(response.body);
   }
 
   RegisterOptions _parseRegisterReq(String responseBody) {
@@ -73,10 +92,36 @@ class AuthApi {
         userId: userId,
         username: username,
         algoId: algoId,
-        challenge: challenge);
+        challenge: challenge
+    );
   }
 }
 
+SigningOptions _parseSigningReq(String responseBody) {
+  var json = jsonDecode(responseBody);
+  String rpId = json['rp']['id'];
+  String challenge = json['challenge'];
+  return SigningOptions(rpId: rpId, challenge: challenge);
+}
+
+User _parseUser(String responseBody) {
+  var json = jsonDecode(responseBody);
+  String username = json['username'];
+  String userId = json['id'];
+  return User(username: username, id: userId);
+}
+
+class User {
+  User({this.username, this.id});
+  String username;
+  String id;
+}
+
+class SigningOptions {
+  SigningOptions({this.rpId, this.challenge});
+  String rpId;
+  String challenge;
+}
 class RegisterOptions {
   RegisterOptions({this.rpId, this.rpName, this.userId, this.username, this.algoId, this.challenge});
   String rpId;

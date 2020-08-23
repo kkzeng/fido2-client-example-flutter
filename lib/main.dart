@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fido2_client/fido2_client.dart';
 import 'package:flutter/material.dart';
 
@@ -55,7 +57,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController _tc = TextEditingController();
   AuthApi _api = AuthApi();
-  RegisterOptions _options;
+  String keyHandle;
+  RegisterOptions _registerOptions;
+  SigningOptions _signingOptions;
 
   Widget buildTextField() {
     return TextField(
@@ -113,7 +117,8 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Text('Press to request registration options'),
               onPressed: () async {
                 String username = _tc.text;
-                _options = await _api.registerRequest(username);
+                _registerOptions = await _api.registerRequest(username);
+                print('${_registerOptions.challenge} ${_registerOptions.username} ${_registerOptions.userId} ${_registerOptions.rpId} ${_registerOptions.rpName}');
               }
             ),
             RaisedButton(
@@ -121,9 +126,27 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () async {
                   String username = _tc.text;
                   Fido2Client f = Fido2Client();
-                  f.initiateRegistrationProcess(_options.challenge, _options.userId, _options.username, _options.rpId, _options.rpName);
-                  // TODO add listener to get these results
-                  //_api.registerResponse(_options.username, _options.challenge, keyHandle, clientDataJSON, attestationObj)
+                  f.addRegistrationResultListener((keyHandle, clientData, attestationObj) async {
+                    var clientDataJSON = base64Url.decode(clientData);
+                    var str = utf8.decode(clientDataJSON);
+                    print(str);
+                    this.keyHandle = keyHandle;
+                    User u = await _api.registerResponse(username, _registerOptions.challenge, keyHandle, clientData, attestationObj); // TODO: get this response
+                  });
+                  f.initiateRegistrationProcess(_registerOptions.challenge, _registerOptions.userId, _registerOptions.username, _registerOptions.rpId, _registerOptions.rpName);
+                }
+            ),
+            RaisedButton(
+                child: Text('Press to request signing options'),
+                onPressed: () async {
+                  String username = _tc.text;
+                  SigningOptions response = await _api.signingRequest(username, keyHandle);
+                  _signingOptions = response;
+                }
+            ),
+            RaisedButton(
+                child: Text('Press to sign using cred'),
+                onPressed: () async {
                 }
             )
           ],
