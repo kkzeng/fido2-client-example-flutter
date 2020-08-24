@@ -63,19 +63,44 @@ class AuthApi {
   }
 
   Future<SigningOptions> signingRequest(String username, String keyHandle) async {
-    String url = '$TEST_URL/signinRequest';
+    String url = '$BASE_URL/signingRequest';
     if(keyHandle != null) {
       url += '?credId=$keyHandle';
     }
     var response = await _client.post(url,
         headers: {
           HttpHeaders.contentTypeHeader: 'application/json',
-          HttpHeaders.cookieHeader: 'username=$username; signed-in=yes',
+          HttpHeaders.cookieHeader: 'username=$username',
           'X-Requested-With': 'XMLHttpRequest'
         },
         body: jsonEncode({}));
     print(response.body);
     return _parseSigningReq(response.body);
+  }
+
+  Future<User> signingResponse(String username, String keyHandle,
+      String challenge, String clientData, String authData, String signature, String userHandle) async {
+    String url = '$BASE_URL/signingResponse';
+    var response = await _client.post(url,
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.cookieHeader: 'username=$username; challenge=$challenge',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: jsonEncode({
+          'id': keyHandle,
+          'type': 'public-key',
+          'rawId': keyHandle,
+          'response': {
+            'clientDataJSON': clientData,
+            'authenticatorData': authData,
+            'signature': signature,
+            'userHandle': userHandle ?? ''
+          }
+        })
+    );
+    print(response.body);
+    return _parseUser(response.body);
   }
 
   RegisterOptions _parseRegisterReq(String responseBody) {
@@ -99,7 +124,7 @@ class AuthApi {
 
 SigningOptions _parseSigningReq(String responseBody) {
   var json = jsonDecode(responseBody);
-  String rpId = json['rp']['id'];
+  String rpId = json['rpId'];
   String challenge = json['challenge'];
   return SigningOptions(rpId: rpId, challenge: challenge);
 }

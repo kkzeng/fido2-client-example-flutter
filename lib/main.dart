@@ -131,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     var str = utf8.decode(clientDataJSON);
                     print(str);
                     this.keyHandle = keyHandle;
-                    User u = await _api.registerResponse(username, _registerOptions.challenge, keyHandle, clientData, attestationObj); // TODO: get this response
+                    User u = await _api.registerResponse(username, _registerOptions.challenge, keyHandle, clientData, attestationObj);
                   });
                   f.initiateRegistrationProcess(_registerOptions.challenge, _registerOptions.userId, _registerOptions.username, _registerOptions.rpId, _registerOptions.rpName);
                 }
@@ -147,6 +147,14 @@ class _MyHomePageState extends State<MyHomePage> {
             RaisedButton(
                 child: Text('Press to sign using cred'),
                 onPressed: () async {
+                  String username = _tc.text;
+                  Fido2Client f = Fido2Client();
+                  f.addSigningResultListener((keyHandle, clientData, authData, signature, userHandle) async {
+                    this.keyHandle = keyHandle;
+                    User u = await _api.signingResponse(username, keyHandle, _signingOptions.challenge, clientData, authData, signature, userHandle);
+                  });
+                  print('Key handle: $keyHandle');
+                  f.initiateSigningProcess(this.keyHandle, _signingOptions.challenge, _signingOptions.rpId);
                 }
             )
           ],
