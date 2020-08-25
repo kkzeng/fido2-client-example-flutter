@@ -24,7 +24,8 @@ dependencies:
   flutter:
     sdk: flutter
   fido2_client:
-    path: ../fido2-client-plugin
+    git:
+      url: git://github.com/mojaloop/fido2-client-plugin
 
   http: ^0.12.2
   shared_preferences: ^0.5.10
