@@ -131,15 +131,19 @@ SigningOptions _parseSigningReq(String responseBody) {
 
 User _parseUser(String responseBody) {
   var json = jsonDecode(responseBody);
+  if(json['error'] != null) {
+    return User(error: json['error']);
+  }
   String username = json['username'];
   String userId = json['id'];
   return User(username: username, id: userId);
 }
 
 class User {
-  User({this.username, this.id});
+  User({this.username, this.id, this.error});
   String username;
   String id;
+  String error;
 }
 
 class SigningOptions {
