@@ -62,7 +62,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "3ffbc1a91794c6ec833a625a6609015069c1e696"
+      resolved-ref: a87e268744815313cbd552704177a1e42eb1935a
       url: "git://github.com/mojaloop/fido2-client-plugin"
     source: git
     version: "0.0.1"

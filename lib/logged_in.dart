@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:fido2_client/fido2_client.dart';
+import 'package:fido2_client/registration_result.dart';
 import 'package:fido2_example_app/key_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'auth_api.dart';
+import 'fido_registration.dart';
 
 class LoggedInPage extends StatefulWidget {
   LoggedInPage({Key key, this.loggedInUser}) : super(key: key);
@@ -15,9 +18,6 @@ class LoggedInPage extends StatefulWidget {
 }
 
 class _LoggedInPageState extends State<LoggedInPage> {
-  AuthApi _api = AuthApi();
-  RegisterOptions _registerOptions;
-
   get loggedInUser => widget.loggedInUser;
 
   @override
@@ -31,28 +31,23 @@ class _LoggedInPageState extends State<LoggedInPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          RaisedButton(
-              child: Text('Press to request registration options'),
-              onPressed: () async {
-                _registerOptions = await _api.registerRequest(loggedInUser);
+          const Text('Logged in page'),
+          FutureBuilder<String>(
+            future: KeyRepository.loadKeyHandle(loggedInUser),
+            builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+              if(!snapshot.hasData) {
+                return RaisedButton(
+                  child: Text('Press to go to FIDO credential registration page'),
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => FidoRegistration(loggedInUser: loggedInUser)));
+                  },
+                );
               }
-          ),
-          RaisedButton(
-              child: Text('Press to register credentials'),
-              onPressed: () async {
-                Fido2Client f = Fido2Client();
-                f.addRegistrationResultListener((keyHandle, clientData, attestationObj) async {
-                  var clientDataJSON = base64Url.decode(clientData);
-                  var str = utf8.decode(clientDataJSON);
-                  KeyRepository.storeKeyHandle(keyHandle, loggedInUser);
-                  User u = await _api.registerResponse(loggedInUser, _registerOptions.challenge, keyHandle, clientData, attestationObj);
-                  if(u.error == null) {
-                    print('Successful registration');
-                  }
-                });
-                f.initiateRegistrationProcess(_registerOptions.challenge, _registerOptions.userId, _registerOptions.username, _registerOptions.rpId, _registerOptions.rpName, _registerOptions.algoId);
+              else {
+                return Container();
               }
-          ),
+            }
+          )
         ],
       )
       )

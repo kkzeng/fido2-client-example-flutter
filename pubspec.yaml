@@ -23,6 +23,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   fido2_client:
     git:
       url: git://github.com/mojaloop/fido2-client-plugin

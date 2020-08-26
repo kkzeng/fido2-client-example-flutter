@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:fido2_client/fido2_client.dart';
-import 'package:fido2_example_app/fidologin.dart';
+import 'package:fido2_example_app/fido_login.dart';
+import 'package:fido2_example_app/key_repository.dart';
 import 'package:fido2_example_app/logged_in.dart';
 import 'package:flutter/material.dart';
 
@@ -75,8 +76,15 @@ class _MyHomePageState extends State<MyHomePage> {
             RaisedButton(
               child: Text('Press to login with FIDO'),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => FidoLogin()));
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => FidoLogin(username: _tc.text)));
               }
+            ),
+            RaisedButton(
+                child: Text('DEBUG: Press to reset everything'),
+                onPressed: () async {
+                  _api.resetDB(); // Server-side
+                  KeyRepository.removeAllKeys(); // Client-side
+                }
             )
           ],
         ),
